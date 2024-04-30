@@ -1,0 +1,14 @@
+import matplotlib.pyplot as plt
+
+# Data
+labels = ['Real Audio', 'Deepfaked Audio']
+sizes = [10000, 10000]  # Sample sizes
+colors = ['skyblue', 'lightcoral']
+explode = (0, 0.1)  # Explode only the second slice (Deepfaked Audio)
+
+# Plot
+plt.figure(figsize=(8, 6))
+plt.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140)
+plt.title('Distribution of Audio Samples')
+plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+plt.show()
