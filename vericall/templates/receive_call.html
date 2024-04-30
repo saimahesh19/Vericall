@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receive Call</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars */
+            background-color: #000; /* Set background color for the cubes */
+        }
+        canvas {
+            display: block; /* Make sure the canvas fills the entire window */
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1; /* Place the canvas behind other content */
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+        .receive-call-container {
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+            border-radius: 20px; /* Larger border radius */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3); /* Larger box shadow */
+            padding: 40px; /* Increased padding */
+            text-align: center;
+            max-width: 600px; /* Maximum width */
+            animation: slideIn 0.5s ease forwards;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        h1 {
+            margin: 0;
+            color: #fff; /* Set text color */
+        }
+        .phone-number,
+        .audio-type,
+        .contact-name {
+            color: #fff; /* Set text color */
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            margin-top: 20px;
+            cursor: pointer;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="background"></canvas>
+    <div class="container">
+        <div class="receive-call-container">
+            <h1>Receive Call</h1>
+            {% if contact_name %}
+            <div class="phone-number">Incoming Call: <span id="phone-number">{{ phone_number }}</span></div>
+            <div class="contact-name">Contact Name: {{ contact_name }}</div>
+            <div class="audio-type" id="audio-type"></div>
+            <button id="pick-button" onclick="pickCall()">Pick Up</button>
+            <button id="hang-button" onclick="hangCall()">Hang Up</button>
+            {% else %}
+            <div class="phone-number">Incoming Call: <span id="phone-number">{{ phone_number }}</span></div>
+            <div class="audio-type" id="audio-type"></div>
+            <button id="pick-button" onclick="pickCall()">Pick Up</button>
+            <button id="hang-button" onclick="hangCall()">Hang Up</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        function pickCall() {
+            fetch('/pick', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                if (data.success) {
+                    updateAudioType(data.audio_type);
+                    updateCubeColors(data.contact_type);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function hangCall() {
+            fetch('/hang', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Function to update audio type
+        function updateAudioType(audioType) {
+            document.getElementById('audio-type').innerText = "Audio Type: " + audioType;
+        }
+
+        // Function to update cube colors based on contact type
+        function updateCubeColors(contactType) {
+            const cubes = document.querySelectorAll('.cube');
+            cubes.forEach(cube => {
+                if (contactType === 'unknown') {
+                    cube.material.color.set(0xff0000); // Red color for unknown contacts
+                }
+            });
+        }
+
+        // JavaScript to create 3D spinning cubes
+        function createCubes(container) {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: container });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            // Create and position cubes in each corner
+            createCube(scene, -12, -12, 0);
+            createCube(scene, 12, -12, 0);
+            createCube(scene, -12, 12, 0);
+            createCube(scene, 12, 12, 0);
+
+            camera.position.z = 20;
+
+            const animate = () => {
+                requestAnimationFrame(animate);
+                scene.rotation.x += 0.009;
+                scene.rotation.y += 0.009;
+                renderer.render(scene, camera);
+            };
+
+            animate();
+        }
+
+        function createCube(scene, x, y, z) {
+            const cubeGeometry = new THREE.BoxGeometry();
+            const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Default color is green
+            const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            cube.position.set(x, y, z);
+            cube.name = 'cube'; // Add a name to identify cubes later
+            cube.scale.set(1, 1, 1);
+            scene.add(cube);
+        }
+
+        createCubes(document.getElementById('background'));
+    </script>
+</body>
+</html>
